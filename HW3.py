@@ -3,9 +3,6 @@ import numpy as np
 from scipy.linalg import cholesky, inv
 import math
 
-A = np.array([[6, 3, 4, 8], [3, 6, 5, 1], [4, 5, 10, 7], [8, 1, 7, 25]])
-L = cholesky(A, lower=True)
-U = cholesky(A, lower=False)
 
 def MyCholesky(matrx, lower):
     print('my version')
@@ -103,8 +100,9 @@ class rainbow_mcSim():
 
     def sim(self, varReduMode):
         self.simulator.sample(varReduMode = varReduMode)
-        print(self.simulator.varReduResult.mean(axis = 1))
-        print(self.simulator.varReduResult.std(axis = 1))
+        #print(self.simulator.varReduResult.mean(axis = 1))
+        #print(self.simulator.varReduResult.std(axis = 1))
+        print(np.corrcoef(self.simulator.varReduResult[-1], rowvar=False))
         self.LnSTArray = self.simulator.result * self.sdArr + self.muArr
         self.STArray = np.exp(self.LnSTArray)
         self.maxSTArray = self.STArray.max(axis = 2)
@@ -113,7 +111,13 @@ class rainbow_mcSim():
         self.disctedPayoffArr = self.payOffArray * np.exp(-self.r * self.T)
 
         
-    
+    def answer(self):
+        self.meanPrice = self.disctedPayoffArr.mean(axis = 1).mean()
+        self.priceStd = self.disctedPayoffArr.mean(axis = 1).std()
+
+        print(f"mean: {self.meanPrice} std: {self.priceStd}")
+        print(self.meanPrice - 2*self.priceStd, self.meanPrice, self.meanPrice + 2*self.priceStd)
+        
 
 if __name__ == '__main__':
     rhoMatrix = [
