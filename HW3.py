@@ -7,7 +7,8 @@ A = np.array([[6, 3, 4, 8], [3, 6, 5, 1], [4, 5, 10, 7], [8, 1, 7, 25]])
 L = cholesky(A, lower=True)
 U = cholesky(A, lower=False)
 
-def cholesky(matrx, lower):
+def MyCholesky(matrx, lower):
+    print('my version')
     n = matrx.shape[0]
     UTri = np.zeros((n,n))
     UTri[0][0] = np.sqrt(matrx[0][0])
@@ -19,14 +20,16 @@ def cholesky(matrx, lower):
             UTri[i][j] = matrx[i][j]
             if i == j:
                 for k in range(0, j):
-                    UTri[i][j] -= (UTri[k][k] * UTri[k][k])
+                    UTri[i][j] -= (UTri[k][j] * UTri[k][j])
                 UTri[i][j] = np.sqrt(UTri[i][j])
             else:
-                for k in range(0, j-1):
-                    UTri[i][j] -= UTri[i][k] * UTri[k][j]
+                for k in range(0, i):
+                    UTri[i][j] -= (UTri[k][i] * UTri[k][j])
                 UTri[i][j] /= UTri[i][i]
-    
-    return UTri
+    if lower:
+        return UTri
+    else:
+        return UTri.T
 
 class montiCarloSimulator():
     def __init__(self, assetCnt, covMatrix, simCnt, repeatCnt):
