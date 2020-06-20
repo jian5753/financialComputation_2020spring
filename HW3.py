@@ -1,11 +1,11 @@
 from pprint import pprint
 import numpy as np
-from scipy.linalg import cholesky, inv
+from scipy.linalg import  inv
 import math
 
 
-def MyCholesky(matrx, lower):
-    print('my version')
+def cholesky(matrx, lower):
+    #print('my version')
     n = matrx.shape[0]
     UTri = np.zeros((n,n))
     UTri[0][0] = np.sqrt(matrx[0][0])
@@ -24,9 +24,9 @@ def MyCholesky(matrx, lower):
                     UTri[i][j] -= (UTri[k][i] * UTri[k][j])
                 UTri[i][j] /= UTri[i][i]
     if lower:
-        return UTri
-    else:
         return UTri.T
+    else:
+        return UTri
 
 class montiCarloSimulator():
     def __init__(self, assetCnt, covMatrix, simCnt, repeatCnt):
@@ -52,14 +52,20 @@ class montiCarloSimulator():
 
     
     def sample(self, varReduMode = ''):
+        # 沒有 bonus 的話 varReduResult 就是原始的Z_i
         self.varReduResult = np.array(self.result_origin)
         if varReduMode == 'bonus1' or varReduMode == 'bonus2':
+            # bonus1 的話 先取原始Z_i 的前半部
             self.varReduResult = self.result_origin[:, :int(self.simCnt/2), :]
-            self.mirrow = self.varReduResult * (-1)
-            self.varReduResult = np.concatenate((self.varReduResult, self.mirrow), axis = 1)
+            # 鏡射一下
+            self.mirror = self.varReduResult * (-1)
+            # 把鏡射的部分加到後半部
+            self.varReduResult = np.concatenate((self.varReduResult, self.mirror), axis = 1)
+            # 除以標準差 (反正 mean=0 就不扣了)
             self.varReduResult = self.varReduResult / self.varReduResult.std(axis =  1)[:, np.newaxis]
 
             if varReduMode == 'bonus2':
+                # 如果有 bonus2 的話再多做J個調整
                 for i, trial in enumerate(self.varReduResult):
                     c_lambda = np.corrcoef(trial, rowvar = False)
                     c_lambda_utri_inv = inv(cholesky(c_lambda, lower=False))
@@ -118,23 +124,3 @@ class rainbow_mcSim():
         print(f"mean: {self.meanPrice} std: {self.priceStd}")
         print(self.meanPrice - 2*self.priceStd, self.meanPrice, self.meanPrice + 2*self.priceStd)
         
-
-if __name__ == '__main__':
-    rhoMatrix = [
-        [1, 0.5, 0.3],
-        [0.5, 1, -0.2],
-        [0.3, -0.2, 1]
-    ]
-
-    test = rainbow_mcSim(
-        100, 0.03, 0.5, 3, 100,
-        [0.1, 0.2, 0.3],
-        [0.1, 0.2, 0.3],
-        rhoMatrix,
-        100, 2
-    )
-
-    test.compute_covMatrix()
-    
-    pprint(test.corrMatrix)
-    pprint(test.covMatrix)
