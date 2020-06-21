@@ -112,7 +112,8 @@ class biTree(lookbackOption):
         #print("## backward induction", currentGen, currentDcnt, "##")
 
         # dChild is the child node with lower St than current St,
-        # uChild is the child node with higher St than cuurent one.
+        # uChild is the child n
+        # ode with higher St than cuurent one.
 
         currentNode = self.tree[currentGen][currentDcnt]
         #print(currentNode, currentNode.St)
