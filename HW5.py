@@ -23,22 +23,40 @@ def binarySearch(target, pool):
         elif target < middleValue:
             headIdx = middleIdx
 
-def LIsearch(target, pool, M):
-    if len(pool) == 1:
-        return 0, pool[0]
+def LIsearch(target, pool):
+    headIdx = 0
+    tailIdx = len(pool) - 1
+    headValue = pool[headIdx]
+    tailValue = pool[tailIdx]
+    if target <= pool[tailIdx]:
+        return tailIdx, pool[tailIdx]
+    elif target >= pool[headIdx]:
+        return headIdx, pool[headIdx]
+    else:
+        while True:
+            preInt = headIdx + (tailIdx - headIdx) * (headValue - target) / (headValue - tailValue)
+            tempIdx = int(preInt)
+            tempValue = pool[tempIdx]
+            #print(headIdx, preInt, tempIdx, tailIdx, "||", headValue, target, tempValue, tailValue)
+            # 判斷 tempIdx 再目標前面還是後面 
+            if tempValue == target:
+                # 終止條件: 找到了
+                return tempIdx, target
+            elif tempValue >= target:
+                headIdx = tempIdx + 1
+                #print(headIdx, tempIdx, tailIdx)
+            elif tempValue <= target:
+                tailIdx = tempIdx - 1
+                #print(headIdx, tempIdx, tailIdx)
 
-    preInt = (target - pool[0]) * M / (pool[-1] - pool[0])
-    if preInt < 0:
-        return 0, pool[0]
-    idx = int(preInt)
-    #print(idx)
-    if pool[idx] > target:
-        idx += 1
-        idx = min(idx, len(pool)-1)
-
-    return idx, pool[idx]
-
-
+            headValue = pool[headIdx]
+            tailValue = pool[tailIdx]
+            # 終止條件: 穿越
+            if headValue < target:
+                return headIdx, headValue
+            if tailValue > target:
+                return tempIdx, tempValue
+            
 class asianNode():
     def __init__(self, St, A_max, A_min, M, bonus1 = False):
         self.St = St
@@ -68,7 +86,7 @@ class asianNode():
         self.dValueLst = np.zeros_like(self.AvgLst) 
         self.ValueLst = np.zeros_like(self.AvgLst)
     
-    def getCallValue(self, midAvg, searchMethod, M):
+    def getCallValue(self, midAvg, searchMethod):
         if searchMethod == 'binary':
             lowerIdx, lowerAvg = binarySearch(midAvg, self.AvgLst)
         elif searchMethod == 'sequential':
@@ -78,7 +96,7 @@ class asianNode():
                 print(midAvg, self.AvgLst[-1], midAvg - self.AvgLst[-1])
                 raise TypeError
         elif searchMethod == 'LI':
-            lowerIdx, lowerAvg = LIsearch(midAvg, self.AvgLst, M)
+            lowerIdx, lowerAvg = LIsearch(midAvg, self.AvgLst)
 
         if lowerIdx == 0:
             # midAvg == A_max
@@ -196,8 +214,8 @@ class asianOptionBiTree(asianOption):
             currentNode.uAvgLst[idx] = uAvg
             currentNode.dAvgLst[idx] = dAvg
             print(f'{currentGen}, {currentDcnt}, {idx}', end ='\r')
-            uValue = uChild.getCallValue(uAvg, searchMethod, self.M)
-            dValue = dChild.getCallValue(dAvg, searchMethod, self.M)
+            uValue = uChild.getCallValue(uAvg, searchMethod)
+            dValue = dChild.getCallValue(dAvg, searchMethod)
             currentNode.uValueLst[idx] = uValue
             currentNode.dValueLst[idx] = dValue
             holdingValue = (self.p * uValue + (1 - self.p) * dValue) * self.deltaDiscountFac
