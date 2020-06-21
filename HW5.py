@@ -27,32 +27,41 @@ def LIsearch(target, pool, M):
     if len(pool) == 1:
         return 0, pool[0]
 
-    idx = int((target - pool[0]) * M / (pool[-1] - pool[0]))
+    preInt = (target - pool[0]) * M / (pool[-1] - pool[0])
+    if preInt < 0:
+        return 0, pool[0]
+    idx = int(preInt)
     #print(idx)
     if pool[idx] > target:
-        if idx == 0:
-            return 0, pool[0]
-    else:
         idx += 1
         idx = min(idx, len(pool)-1)
 
     return idx, pool[idx]
 
-    
 
 class asianNode():
-    def __init__(self, St, A_max, A_min, M):
+    def __init__(self, St, A_max, A_min, M, bonus1 = False):
         self.St = St
         self.A_max = A_max
         self.A_min = A_min
         self.M = M
         
-        self.step = (A_max - A_min) / M
         #print(A_max, A_min, M, step)
-        if self.step == 0:
+        if A_max == A_min:
             self.AvgLst = np.ones(1) * self.A_max
         else:
-            self.AvgLst = np.arange(A_max, A_min - 0.5 * self.step, -self.step)
+            if bonus1:
+                logAmax = np.log(A_max)
+                logAmin = np.log(A_min)
+                #print(logAmax - logAmin, end = '\r')
+                temp = np.arange(logAmax, logAmin, (logAmin - logAmax)/M)
+                self.AvgLst = np.exp(temp)
+                self.AvgLst = np.append(self.AvgLst, self.A_min)
+            else:
+                self.step = (A_max - A_min) / M
+                self.AvgLst = np.arange(A_max, A_min, -self.step)
+                self.AvgLst = np.append(self.AvgLst, self.A_min)
+
         self.uAvgLst = np.array(self.AvgLst)
         self.dAvgLst = np.array(self.AvgLst)
         self.uValueLst = np.zeros_like(self.AvgLst)
@@ -72,17 +81,16 @@ class asianNode():
             lowerIdx, lowerAvg = LIsearch(midAvg, self.AvgLst, M)
 
         if lowerIdx == 0:
-            higherIdx = lowerIdx
-            higherAvg = lowerAvg + 1
+            # midAvg == A_max
+            midValue = self.ValueLst[0]
+        elif midAvg <= self.AvgLst[-1]:
+            # midAvg == A_min 但因為計算誤差所以有可能 midAvg < A_min   
+            midValue = self.ValueLst[-1]
         else:
-            higherIdx, higherAvg = lowerIdx - 1, self.AvgLst[lowerIdx - 1]
-
-        higherValue = self.ValueLst[higherIdx]
-        lowerValue = self.ValueLst[lowerIdx]
-
-        midValue = higherValue * (midAvg - lowerAvg) + lowerValue * (higherAvg - midAvg)
-        if higherAvg != lowerAvg:
-            midValue = midValue / (higherAvg - lowerAvg)
+            higherAvg = self.AvgLst[lowerIdx - 1]
+            higherValue = self.ValueLst[lowerIdx - 1]
+            lowerValue = self.ValueLst[lowerIdx]
+            midValue = lowerValue + (higherValue - lowerValue) * (midAvg - lowerAvg) / (higherAvg - lowerAvg)
         return midValue
         
 
@@ -150,7 +158,7 @@ class asianOptionBiTree(asianOption):
 
         return ans
 
-    def grow(self):
+    def grow(self, bonus1):
         self.tree[0][0] = asianNode(self.St, self.St, self.St, self.M)
         for genCnt in range(1, self.n + 1):
             for dCnt in range(0, genCnt + 1):
@@ -159,7 +167,8 @@ class asianOptionBiTree(asianOption):
                 self.tree[genCnt][dCnt] = asianNode(
                     self.STij(genCnt, dCnt),
                     Amax, Amin,
-                    self.M
+                    self.M,
+                    bonus1
                 )
 
         for dCnt in range(0, self.n + 1):
